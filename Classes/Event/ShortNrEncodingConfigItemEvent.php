@@ -2,7 +2,9 @@
 
 namespace CPSIT\ShortNr\Event;
 
+use CPSIT\ShortNr\Config\DTO\ConfigInterface;
 use CPSIT\ShortNr\Config\DTO\ConfigItemInterface;
+use CPSIT\ShortNr\Service\Url\Demand\Encode\EncoderDemandInterface;
 
 final class ShortNrEncodingConfigItemEvent
 {
@@ -10,7 +12,9 @@ final class ShortNrEncodingConfigItemEvent
      * @param ConfigItemInterface[] $configItems
      */
     public function __construct(
-        private array $configItems
+        private array $matchedConfig,
+        private readonly EncoderDemandInterface $demand,
+        private readonly ConfigInterface $globalConfig
     ) {}
 
     /**
@@ -18,7 +22,7 @@ final class ShortNrEncodingConfigItemEvent
      */
     public function getConfigItems(): array
     {
-        return $this->configItems;
+        return $this->matchedConfig;
     }
 
     /**
@@ -26,6 +30,16 @@ final class ShortNrEncodingConfigItemEvent
      */
     public function setConfigItems(array $configItems): void
     {
-        $this->configItems = $configItems;
+        $this->matchedConfig = $configItems;
+    }
+
+    public function getDemand(): EncoderDemandInterface
+    {
+        return $this->demand;
+    }
+
+    public function getGlobalConfig(): ConfigInterface
+    {
+        return $this->globalConfig;
     }
 }

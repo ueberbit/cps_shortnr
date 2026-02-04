@@ -42,15 +42,16 @@ class EncodeConfigNormalizerService
      */
     public function getConfigItemForDemand(EncoderDemandInterface $demand): array
     {
+        $config = $this->configLoader->getConfig();
         $configItems = match (true) {
-            $demand instanceof ConfigNameEncoderDemand => [$this->configLoader->getConfig()->getConfigItem($demand->getConfigName())],
+            $demand instanceof ConfigNameEncoderDemand => [$config->getConfigItem($demand->getConfigName())],
             $demand instanceof ObjectEncoderDemand => $this->resolveEntityToConfigItem($demand->getObject()),
             $demand instanceof EnvironmentEncoderDemand => $this->resolveConfigItemFromEnvironmentDemand($demand),
             default => []
         };
 
         /** @var ShortNrEncodingConfigItemEvent $event */
-        $event = $this->eventDispatcher->dispatch(new ShortNrEncodingConfigItemEvent($configItems));
+        $event = $this->eventDispatcher->dispatch(new ShortNrEncodingConfigItemEvent($configItems, $demand, $config));
         return $event->getConfigItems();
     }
 
@@ -117,11 +118,9 @@ class EncodeConfigNormalizerService
                     $extbaseRequestParameters->getControllerActionName() === $pluginConfig['action']??null &&
                     $extbaseRequestParameters->getControllerName() === $pluginConfig['controller']??null
                 ) {
-
-                    if (!$this->newsPluginWorkaround($extbaseRequestParameters->getPluginName(), $pluginConfig['plugin'], $extbaseRequestParameters->getControllerExtensionName())) {
+                    if (!(strcasecmp((string)$extbaseRequestParameters->getPluginName(), (string)($pluginConfig['plugin']??''))  === 0)) {
                         continue;
                     }
-
 
                     // check if the argument name exists
                     try {
@@ -139,25 +138,6 @@ class EncodeConfigNormalizerService
 
         return array_values($configs);
     }
-
-    /**
-     * @param string $incomingPluginName
-     * @param string $configPluginName
-     * @param string $extension
-     * @return bool
-     */
-    private function newsPluginWorkaround(string $incomingPluginName, string $configPluginName, string $extension): bool
-    {
-        // news way
-        if ( strtolower($extension) === 'news') {
-            // news somehow force Pi1 for the plugin name...
-            return strcasecmp($incomingPluginName, $configPluginName)  === 0 || strtolower($configPluginName) === 'pi1';
-        }
-
-        // correct way
-        return strcasecmp($incomingPluginName, $configPluginName)  === 0;
-    }
-
 
     /**
      * @param PageArguments $pageArguments
